@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Sekolahku</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --danger: #f72585;
+            --success: #4cc9f0;
+            --bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card: rgba(255,255,255,0.95);
+            --text: #2d1b69;
+            --shadow: rgba(0,0,0,0.2);
+        }
+        .dark-mode {
+            --primary: #7209b7;
+            --secondary: #560bad;
+            --danger: #ff4d7d;
+            --card: #1e1e3a;
+            --text: #e0dfff;
+            --bg: linear-gradient(135deg, #0f0f1e 0%, #1a0033 100%);
+            --shadow: rgba(0,0,0,0.6);
+        }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            min-height: 100vh;
+            padding: 10px;
+            transition: all 0.4s ease;
+        }
+        .container { 
+            max-width: 900px; 
+            margin: 20px auto; 
+            background: var(--card); 
+            border-radius: 20px; 
+            padding: 20px; 
+            box-shadow: 0 20px 40px var(--shadow);
+            backdrop-filter: blur(10px);
+        }
+        h1 { text-align: center; font-size: 2em; margin: 0 0 10px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .user { font-weight: bold; color: var(--primary); }
+        button { padding: 12px 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-share { background: #25D366; color: white; }
+        .btn-dark { background: #333; color: white; }
+        button:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+
+        /* GRID UNTUK FILTER */
+        .filter-group { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; /* 2 kolom */
+            gap: 12px; 
+            margin-bottom: 15px; 
+            align-items: end; 
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: 15px;
+        }
+        
+        /* GRID UNTUK TAMBAH JADWAL */
+        .tambah-group { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr 1fr auto; 
+            gap: 12px; 
+            margin-top: 15px; 
+            margin-bottom: 20px;
+            align-items: end; 
+        }
+
+        select, input { 
+            padding: 12px; 
+            border-radius: 12px; 
+            border: none; 
+            background: rgba(255,255,255,0.8); 
+            color: #333;
+        }
+        .dark-mode select, .dark-mode input { 
+            background: rgba(0,0,0,0.4); 
+            color: white; 
+        }
+
+        /* CARD JADWAL */
+        #tabelContainer {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 20px;
+        }
+        .jadwal-row {
+            display: grid;
+            grid-template-columns: 60px 120px 1fr 130px 110px;
+            align-items: center;
+            padding: 18px 20px;
+            border-radius: 18px;
+            background: var(--card);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            color: var(--text);
+        }
+        .jadwal-row:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 15px 30px rgba(114,9,183,0.5) !important;
+        }
+        .no { font-weight: bold; opacity: 0.7; font-size: 1.1em; }
+        .hari { font-weight: bold; font-size: 1.1em; }
+        .mapel { font-weight: 500; }
+        .jam { opacity: 0.9; }
+        .aksi { text-align: center; }
+
+        .empty { 
+            text-align: center; 
+            padding: 60px 20px; 
+            color: #aaa; 
+            font-size: 1.4em; 
+            background: var(--card);
+            border-radius: 18px;
+        }
+        
+        /* STYLE KHUSUS NOTIFIKASI */
+        #today-schedule-info {
+            padding: 15px; 
+            margin-bottom: 20px; 
+            border-radius: 12px; 
+            background: var(--primary); 
+            color: white; 
+            font-weight: bold; 
+            text-align: center; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            transition: background 0.3s ease;
+        }
+
+        @media (max-width: 600px) {
+            .filter-group, .tambah-group { grid-template-columns: 1fr; }
+            .header { flex-direction: column; text-align: center; }
+            h1 { font-size: 1.7em; }
+            .jadwal-row {
+                grid-template-columns: 50px 100px 1fr 100px 90px;
+                padding: 16px;
+                font-size: 0.95em;
+            }
+        }
+    </style>
+</head>
+<body onload="initHome()">
+
+    <div class="container">
+        <div class="header">
+            <h1>Jadwal Sekolahku</h1>
+            <div>
+                <span class="user" id="userEmail"></span> 
+                <button class="btn-dark" onclick="toggleDark()">Dark Mode</button>
+                <button class="btn-danger" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div id="today-schedule-info">
+            Selamat Datang! Loading jadwal hari ini...
+        </div>
+
+        <div class="filter-group">
+            <select id="filter_hari" onchange="filterJadwal()">
+                <option value="">-- Tampilkan Semua Hari --</option>
+                <option>Senin</option><option>Selasa</option><option>Rabu</option>
+                <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+            </select>
+            <button class="btn-primary" onclick="loadJadwal()">Refresh Jadwal</button>
+        </div>
+
+
+        <div class="tambah-group">
+            <select id="hari">
+                <option value="">Hari Baru</option>
+                <option>Senin</option><option>Selasa</option><option>Rabu</option>
+                <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+            </select>
+            <input id="mata_pelajaran" placeholder="Mata Pelajaran">
+            <input id="jam" placeholder="Jam (08.00-09.30)">
+            <button class="btn-primary" onclick="tambahJadwal()">+ Tambah</button>
+        </div>
+
+        <div id="tabelContainer"></div>
+
+        <center style="margin-top:30px">
+            <button class="btn-share" onclick="shareWA()">Share ke WA</button>
+        </center>
+    </div>
+
+    <script>
+        // Supabase Credential (HARAP GANTI INI DENGAN KREDENSIAL ANDA!)
+        const SUPABASE_URL = "https://jeypuotfapjlgputihgc.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpleXB1b3RmYXBqbGdwdXRpaGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ3NDc0MDEsImV4cCI6MjA4MDMyMzQwMX0.u_Hf7z01HbFeVlz557vgwPtQk9zbuvlb1zjf-y4znQk";
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+
+        // --- FUNGSI AUTENTIKASI ---
+        async function logout() {
+            await supabase.auth.signOut();
+            window.location.href = "login.html";
+        }
+        
+        // FUNGSI BARU: MENAMPILKAN NOTIFIKASI JADWAL HARI INI
+        async function showTodaySchedule() {
+            const hariHari = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+            const todayIndex = new Date().getDay();
+            const hariIni = hariHari[todayIndex];
+            
+            // 1. Ambil jadwal hari ini
+            const { data: { user } } = await supabase.auth.getUser();
+            const { data: todayData, error } = await supabase
+                .from('jadwal')
+                .select('mata_pelajaran, jam')
+                .eq('user_id', user.id)
+                .eq('hari', hariIni)
+                .order('jam', { ascending: true });
+
+            const infoBox = document.getElementById('today-schedule-info');
+            // Ambil username untuk sapaan
+            const username = user.email.split('@')[0];
+
+            if (error || todayData.length === 0) {
+                infoBox.innerHTML = `👋 Halo ${username}! Hari ini **${hariIni}**, dan tidak ada jadwal yang tersimpan.`;
+                infoBox.style.background = 'var(--secondary)'; // Ubah warna jika tidak ada jadwal
+                return;
+            }
+
+            // 2. Format output
+            let scheduleText = todayData.map(item => `**${item.mata_pelajaran}** (${item.jam})`).join(' | ');
+
+            infoBox.innerHTML = `
+                <span style="font-size: 1.1em;">🔔 Jadwal Hari Ini (**${hariIni}**):</span>
+                <br>
+                <span style="font-weight: normal; margin-top: 5px; display: inline-block;">${scheduleText}</span>
+            `;
+            infoBox.style.background = 'var(--primary)'; // Gunakan warna utama jika ada jadwal
+        }
+
+        // INIT HOME DENGAN SAPAAN DAN NOTIFIKASI
+        async function initHome() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = "login.html";
+                return;
+            }
+            
+            // Sapaan Personal
+            const email = session.user.email;
+            const username = email.split('@')[0]; 
+            const userEmailElement = document.getElementById("userEmail");
+            if (userEmailElement) {
+                userEmailElement.innerHTML = `Halo, <b>${username}</b>!`; 
+                userEmailElement.style.color = 'var(--danger)'; 
+            }
+            
+            // Panggil fungsi Notifikasi Hari Ini
+            await showTodaySchedule(); 
+            
+            // Kemudian tampilkan semua jadwal
+            await loadJadwal();
+        }
+
+        // --- FUNGSI CRUD LOGIC ---
+
+        async function updateJadwal(id, hariBaru, mapelBaru, jamBaru) {
+            const { error } = await supabase
+                .from('jadwal')
+                .update({ hari: hariBaru, mata_pelajaran: mapelBaru, jam: jamBaru })
+                .eq('id', id);
+
+            if (error) {
+                alert("Gagal update jadwal: " + error.message);
+            } else {
+                // Setelah update, kita panggil filterJadwal() agar filter yang sedang aktif tetap berlaku
+                filterJadwal(); 
+                showTodaySchedule(); // Refresh notifikasi hari ini
+            }
+        }
+
+        async function tambahJadwal() {
+            const hari = document.getElementById("hari").value;
+            const mata_pelajaran = document.getElementById("mata_pelajaran").value.trim();
+            const jam = document.getElementById("jam").value.trim();
+
+            if (!hari || !mata_pelajaran || !jam) {
+                alert("Isi semua field dulu ya!");
+                return;
+            }
+
+            const { data: { user } } = await supabase.auth.getUser();
+
+            const { error } = await supabase
+                .from('jadwal')
+                .insert([{ user_id: user.id, hari, mata_pelajaran, jam }]);
+
+            if (error) {
+                alert("Gagal tambah: " + error.message);
+            } else {
+                alert("Jadwal ditambah!");
+                loadJadwal();
+                showTodaySchedule(); // Refresh notifikasi hari ini
+                document.getElementById("hari").value = "";
+                document.getElementById("mata_pelajaran").value = "";
+                document.getElementById("jam").value = "";
+            }
+        }
+        
+        // FUNGSI INTI: Memuat Jadwal (Sekarang mendukung Filter)
+        async function loadJadwal(selectedHari) {
+            const { data: { user } } = await supabase.auth.getUser();
+
+            let query = supabase
+                .from('jadwal')
+                .select('*')
+                .eq('user_id', user.id);
+            
+            // TAMBAHKAN FILTER HARI JIKA ADA
+            if (selectedHari && selectedHari !== '') {
+                query = query.eq('hari', selectedHari);
+            }
+
+            const { data, error } = await query
+                .order('hari', { ascending: true }); // Tetap urutkan agar rapi
+
+            if (error) {
+                alert("Gagal load: " + error.message);
+                return { data: [], error: error };
+            }
+            
+            // Panggil fungsi render setelah data diambil
+            renderTabel(data);
+            return { data, error };
+        }
+        
+        // FUNGSI BARU: Dipanggil oleh onchange pada select box filter
+        function filterJadwal() {
+            const hari = document.getElementById('filter_hari').value;
+            loadJadwal(hari);
+        }
+
+        async function hapusJadwal(id) {
+            if (!confirm('Yakin hapus jadwal ini?')) return;
+            const { error0 } = await supabase.from('jadwal').delete().eq('id', id);
+            if (error0) alert('Gagal hapus: '+error0.message);
+            // Setelah hapus, panggil filterJadwal() untuk me-refresh data dengan filter yang aktif
+            else {
+                filterJadwal();
+                showTodaySchedule(); // Refresh notifikasi hari ini
+            } 
+        }
+
+
+        // --- FUNGSI UTILITY (UI & VALIDASI) ---
+
+        // Dark Mode Toggle
+        function toggleDark() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('dark', document.body.classList.contains('dark-mode'));
+        }
+        if (localStorage.getItem('dark') === 'true') document.body.classList.add('dark-mode');
+
+        // Share WA
+        function shareWA() {
+            const text = `Cek jadwal sekolahku nih! %F0%9F%93%9A%0A%F0%9F%94%97 ${window.location.href}`;
+            window.open(`https://wa.me/?text=${text}`, '_blank');
+        }
+
+        // RENDER CARD JADWAL
+        async function renderTabel(data) {
+            const hariUrut = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+            const container = document.getElementById('tabelContainer');
+
+            if (!data || data.length === 0) {
+                const filterHari = document.getElementById('filter_hari').value;
+                let pesan = 'Belum ada jadwal nih 😢<br>Tambah dulu yuk!';
+                if (filterHari !== '') {
+                    pesan = `Tidak ada jadwal untuk hari **${filterHari}**!`;
+                }
+                container.innerHTML = `<div class="empty">${pesan}</div>`;
+                return;
+            }
+
+            data.sort((a,b) => {
+                return hariUrut.indexOf(a.hari) - hariUrut.indexOf(b.hari) || a.jam.localeCompare(b.jam);
+            });
+
+            let html = '';
+            data.forEach((item, i) => {
+                html += `
+                <div class="jadwal-row">
+                    <div class="no">${i+1}</div>
+                    <div class="hari"><strong>${item.hari}</strong></div>
+                    <div class="mapel">${item.mata_pelajaran}</div>
+                    <div class="jam">${item.jam}</div>
+                    <div class="aksi">
+                        <button class="btn-primary" onclick="editJadwal('${item.id}')">✏️</button>
+                        <button class="btn-danger" onclick="hapusJadwal('${item.id}')">🗑️</button>
+                    </div>
+                </div>`;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // FUNGSI EDIT JADWAL DENGAN VALIDASI FLEKSIBEL
+        async function editJadwal(id) {
+            // 1. Ambil data jadwal yang mau diedit
+            const { data, error } = await supabase
+                .from('jadwal')
+                .select('*')
+                .eq('id', id)
+                .single();
+            
+            if (error || !data) {
+                alert("Gagal mengambil data untuk diedit.");
+                return;
+            }
+            
+            // Mapping Hari untuk validasi fleksibel (menerima Indo atau English)
+            const hariKonversi = {
+                'monday': 'Senin', 'tuesday': 'Selasa', 'wednesday': 'Rabu',
+                'thursday': 'Kamis', 'friday': 'Jumat', 'saturday': 'Sabtu',
+                'senin': 'Senin', 'selasa': 'Selasa', 'rabu': 'Rabu',
+                'kamis': 'Kamis', 'jumat': 'Jumat', 'sabtu': 'Sabtu'
+            };
+
+            let hariBaru;
+            let inputHariValid = false;
+            
+            // 2. Minta input Hari dengan validasi loop
+            do {
+                hariBaru = prompt(`Ubah Hari (Saat ini: ${data.hari}). Isi dengan nama Hari (contoh: Senin atau Monday).`, data.hari);
+                if (hariBaru === null) return; // Dibatalkan
+                
+                hariBaru = hariBaru.trim().toLowerCase();
+                
+                if (hariKonversi.hasOwnProperty(hariBaru)) {
+                    // Jika valid, konversi ke format yang diinginkan (Indo)
+                    hariBaru = hariKonversi[hariBaru];
+                    inputHariValid = true;
+                } else {
+                    alert("Input hari tidak valid. Mohon isi dengan nama hari yang benar.");
+                }
+            } while (!inputHariValid);
+
+            // Minta input Mata Pelajaran
+            const mapelBaru = prompt(`Ubah Mata Pelajaran (Saat ini: ${data.mata_pelajaran})`, data.mata_pelajaran);
+            if (mapelBaru === null || mapelBaru.trim() === "") return;
+
+            // Minta input Jam
+            const jamBaru = prompt(`Ubah Jam (Saat ini: ${data.jam})`, data.jam);
+            if (jamBaru === null || jamBaru.trim() === "") return;
+
+            // 3. Panggil fungsi update
+            await updateJadwal(id, hariBaru, mapelBaru.trim(), jamBaru.trim());
+            alert("Perubahan Jadwal disimpan!");
+        }
+        
+    </script>
+</body>
+</html>

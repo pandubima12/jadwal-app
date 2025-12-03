@@ -1,0 +1,118 @@
+<style>
+    :root {
+        --primary: #4361ee;
+        --secondary: #3f37c9;
+        --accent: #4895ef;
+        --danger: #f72585;
+        --success: #4cc9f0;
+        --bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --card: rgba(255,255,255,0.95);
+        --text: #2d1b69;
+        --border: #eee;
+    }
+    .dark-mode {
+        --primary: #7209b7;
+        --secondary: #560bad;
+        --danger: #ff4d7d;
+        --card: rgba(20,20,40,0.95);
+        --text: #e0dfff;
+        --bg: linear-gradient(135deg, #0f0f1e 0%, #1a0033 100%);
+        --border: rgba(255,255,255,0.1);
+    }
+    body { 
+        font-family: 'Segoe UI', sans-serif; 
+        background: var(--bg); 
+        color: var(--text); 
+        margin: 0; 
+        min-height: 100vh;
+        padding: 10px;
+        transition: background 0.4s ease;
+    }
+    .container { 
+        max-width: 900px; 
+        margin: 20px auto; 
+        background: var(--card); 
+        border-radius: 20px; 
+        padding: 20px; 
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        backdrop-filter: blur(10px);
+    }
+    h1 { text-align: center; font-size: 2em; margin: 0 0 10px; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .user { font-weight: bold; color: var(--primary); }
+    button { padding: 12px 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-share { background: #25D366; color: white; }
+    .btn-dark { background: #333; color: white; }
+    button:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); }
+
+    .form-group { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; margin: 20px 0; align-items: end; }
+    select, input { 
+        padding: 12px; 
+        border-radius: 12px; 
+        border: none; 
+        background: rgba(255,255,255,0.8); 
+        color: #333;
+    }
+    .dark-mode select, .dark-mode input { 
+        background: rgba(0,0,0,0.4); 
+        color: white; 
+    }
+
+    /* TABEL - FULL DARK MODE SUPPORT */
+    table { 
+        width: 100%; 
+        border-collapse: collapse; 
+        margin-top: 20px; 
+        border-radius: 12px; 
+        overflow: hidden;
+        background: transparent;
+    }
+    th { 
+        background: var(--primary); 
+        color: white; 
+        padding: 16px; 
+        text-align: center;
+    }
+    td { 
+        padding: 14px; 
+        text-align: center; 
+        border-bottom: 1px solid var(--border);
+        background-color: var(--card);
+    }
+    tbody tr:hover {
+        background-color: rgba(67, 97, 238, 0.2) !important;
+    }
+    .dark-mode tbody tr:hover {
+        background-color: rgba(114, 9, 183, 0.35) !important;
+    }
+    .actions button { 
+        margin: 0 5px; 
+        padding: 8px 14px; 
+        font-size: 0.9em; 
+    }
+    .empty { 
+        text-align: center; 
+        padding: 50px; 
+        color: #aaa; 
+        font-size: 1.3em; 
+    }
+
+    /* FIX TERAKHIR - PAKSA TABEL & BARIS SELALU IKUT TEMA (nggak putih lagi!) */
+    td, tr, table {
+        background-color: var(--card) !important;
+    }
+    .dark-mode td,
+    .dark-mode tr,
+    .dark-mode table {
+        background-color: #1e1e3a !important;   /* Hitam pekat premium */
+        color: #e0dfff !important;
+    }
+
+    @media (max-width: 600px) {
+        .form-group { grid-template-columns: 1fr; }
+        .header { flex-direction: column; text-align: center; }
+        h1 { font-size: 1.6em; }
+    }
+</style>

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daftar - Jadwal Sekolahku</title>
+    <link rel="stylesheet" href="style-auth.css">
+</head>
+<body onload="checkDarkMode()">
+    <div class="container">
+        <h2>Daftar Akun Baru</h2>
+        <input id="reg_email" type="email" placeholder="Email" required>
+        <input id="reg_password" type="password" placeholder="Password" required>
+        <button onclick="registerUser()">Daftar Sekarang</button>
+        <p id="msg" style="color:var(--danger); margin-top:15px; font-weight: bold;"></p>
+        <p style="text-align:center; margin-top:25px;">
+            Sudah punya akun? <a href="login.html">Login</a>
+        </p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <script>
+        function checkDarkMode() {
+            if (localStorage.getItem('dark') === 'true') {
+                document.body.classList.add('dark-mode-auth');
+            }
+        }
+    </script>
+</body>
+</html>

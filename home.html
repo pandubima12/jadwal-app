@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jadwal Sekolahku</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+    <style>
+        :root {
+            --primary: #4361ee;
+            --secondary: #3f37c9;
+            --accent: #4895ef;
+            --danger: #f72585;
+            --success: #4cc9f0;
+            --bg: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card: rgba(255,255,255,0.95);
+            --text: #2d1b69;
+        }
+        .dark-mode {
+            --primary: #7209b7;
+            --secondary: #560bad;
+            --card: rgba(30,30,60,0.95);
+            --text: #e0dfff;
+            --bg: linear-gradient(135deg, #0d0d2b 0%, #1a0033 100%);
+        }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            min-height: 100vh;
+            padding: 10px;
+        }
+        .container { 
+            max-width: 900px; 
+            margin: 20px auto; 
+            background: var(--card); 
+            border-radius: 20px; 
+            padding: 20px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+        h1 { text-align: center; font-size: 2em; margin: 0 0 10px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+        .user { font-weight: bold; color: var(--primary); }
+        button { padding: 12px 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: all 0.3s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-share { background: #25D366; color: white; }
+        .btn-dark { background: #333; color: white; }
+        button:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        .form-group { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; margin: 20px 0; align-items: end; }
+        select, input { padding: 12px; border-radius: 12px; border: none; background: rgba(255,255,255,0.8); }
+        .dark-mode select, .dark-mode input { background: rgba(0,0,0,0.3); color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; border-radius: 12px; overflow: hidden; }
+        th { background: var(--primary); color: white; padding: 15px; }
+        td { padding: 12px; text-align: center; border-bottom: 1px solid #eee; }
+        .actions button { margin: 0 5px; padding: 6px 10px; font-size: 0.9em; }
+        .empty { text-align: center; padding: 40px; color: #999; font-size: 1.2em; }
+        @media (max-width: 600px) {
+            .form-group { grid-template-columns: 1fr; }
+            .header { flex-direction: column; text-align: center; }
+            h1 { font-size: 1.6em; }
+        }
+    </style>
+</head>
+<body onload="initHome()">
+    <div class="container">
+        <div class="header">
+            <h1>📚 Jadwal Sekolahku</h1>
+            <div>
+                <span class="user" id="userEmail"></span> 
+                <button class="btn-dark" onclick="toggleDark()">🌙</button>
+                <button class="btn-danger" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <select id="hari">
+                <option value="">Hari</option>
+                <option>Senin</option><option>Selasa</option><option>Rabu</option>
+                <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+            </select>
+            <input id="mata_pelajaran" placeholder="Mata Pelajaran">
+            <input id="jam" placeholder="Jam (08.00-09.30)">
+            <button class="btn-primary" onclick="tambahJadwal()">+ Tambah</button>
+        </div>
+
+        <div id="tabelContainer"></div>
+
+        <center style="margin-top:20px">
+            <button class="btn-share" onclick="shareWA()">📲 Share ke WA</button>
+        </center>
+    </div>
+
+    <script>
+        function toggleDark() {
+            document.body.classList.toggle('dark-mode');
+            localStorage.setItem('dark', document.body.classList.contains('dark-mode'));
+        }
+        if (localStorage.getItem('dark') === 'true') document.body.classList.add('dark-mode');
+
+        function shareWA() {
+            const text = `Liat nih jadwal sekolahku! %F0%9F%93%9A%0A%F0%9F%94%97 ${window.location.href}`;
+            window.open(`https://wa.me/?text=${text}`, '_blank');
+        }
+
+        async function renderTabel(data) {
+            const hariUrut = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+            const container = document.getElementById('tabelContainer');
+            if (!data || data.length === 0) {
+                container.innerHTML = '<div class="empty">Belum ada jadwal nih 😢<br>Tambah dulu yuk!</div>';
+                return;
+            }
+            let html = `<table><tr><th>No</th><th>Hari</th><th>Mata Pelajaran</th><th>Jam</th><th>Aksi</th></tr>`;
+            data.sort((a,b) => {
+                return hariUrut.indexOf(a.hari) - hariUrut.indexOf(b.hari) || a.jam.localeCompare(b.jam);
+            });
+            data.forEach((item, i) => {
+                html += `<tr>
+                    <td>${i+1}</td>
+                    <td><strong>${item.hari}</strong></td>
+                    <td>${item.mata_pelajaran}</td>
+                    <td>${item.jam}</td>
+                    <td class="actions">
+                        <button class="btn-primary" onclick="editJadwal('${item.id}')">✏️</button>
+                        <button class="btn-danger" onclick="hapusJadwal('${item.id}')">🗑️</button>
+                    </td>
+                </tr>`;
+            });
+            html += `</table>`;
+            container.innerHTML = html;
+        }
+
+        async function hapusJadwal(id) {
+            if (!confirm('Yakin hapus jadwal ini?')) return;
+            await supabase.from('jadwal').delete().eq('id', id);
+            loadJadwal();
+        }
+
+        function editJadwal(id) {
+            // nanti kalau mau lebih cakep bisa modal, sementara pake prompt dulu
+            alert('Fitur edit lengkap menyusul ya bro 😎 Mau langsung pake yang ini dulu?');
+        }
+
+        // update loadJadwal di app.js nanti diganti panggil renderTabel()
+        // sementara kita override di sini
+        const originalLoad = loadJadwal;
+        window.loadJadwal = async () => {
+            const { data } = await originalLoad();
+            renderTabel(data);
+        };
+    </script>
+    <script>
+// Dark mode
+function toggleDark() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('dark', document.body.classList.contains('dark-mode'));
+}
+if (localStorage.getItem('dark') === 'true') document.body.classList.add('dark-mode');
+
+// Share WA
+function shareWA() {
+    const text = `Cek jadwal sekolahku nih! %F0%9F%93%9A%0A%F0%9F%94%97 ${window.location.href}`;
+    window.open(`https://wa.me/?text=${text}`, '_blank');
+}
+
+// Render tabel cakep + urut + tombol hapus
+async function renderTabel(data) {
+    const hariUrut = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const container = document.getElementById('tabelContainer');
+
+    if (!data || data.length === 0) {
+        container.innerHTML = '<div class="empty">Belum ada jadwal nih 😢<br>Tambah dulu yuk!</div>';
+        return;
+    }
+
+    // Urutkan hari dulu, baru jam
+    data.sort((a,b) => {
+        return hariUrut.indexOf(a.hari) - hariUrut.indexOf(b.hari) || a.jam.localeCompare(b.jam);
+    });
+
+    let html = `<table>
+        <tr><th>No</th><th>Hari</th><th>Mata Pelajaran</th><th>Jam</th><th>Aksi</th></tr>`;
+    data.forEach((item, i) => {
+        html += `<tr>
+            <td>${i+1}</td>
+            <td><strong>${item.hari}</strong></td>
+            <td>${item.mata_pelajaran}</td>
+            <td>${item.jam}</td>
+            <td class="actions">
+                <button class="btn-danger" onclick="hapusJadwal('${item.id}')">Hapus</button>
+            </td>
+        </tr>`;
+    });
+    html += `</table>`;
+    container.innerHTML = html;
+}
+
+// Hapus jadwal
+async function hapusJadwal(id) {
+    if (!confirm('Yakin hapus jadwal ini?')) return;
+    const { error } = await supabase.from('jadwal').delete().eq('id', id);
+    if (error) alert('Gagal hapus: '+error.message);
+    else loadJadwal();
+}
+
+// Ganti fungsi loadJadwal supaya nampilin tabel cakep
+const oldLoadJadwal = loadJadwal;
+window.loadJadwal = async function() {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase
+        .from('jadwal')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('hari', { ascending: true });
+
+    if (error) {
+        alert("Gagal load: " + error.message);
+        return;
+    }
+    renderTabel(data);  // ← ini yang bikin muncul tabel cakep
+};
+</script>
+</body>
+</html>
