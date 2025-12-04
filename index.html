@@ -320,15 +320,15 @@
             const username = user.email.split('@')[0];
 
             if (error || todayData.length === 0) {
-                infoBox.innerHTML = `👋 Hello **${username}**! Today is **${hariIni}**, and there are no schedules saved.`;
+                infoBox.innerHTML = `👋 Hello ${username}! Today is ${hariIni}, and there are no schedules saved.`;
                 infoBox.style.background = 'var(--secondary)'; 
                 return;
             }
 
-            let scheduleText = todayData.map(item => `**${item.mata_pelajaran}** (${item.jam})`).join(' | ');
+            let scheduleText = todayData.map(item => `${item.mata_pelajaran} (${item.jam})`).join(' | ');
 
             infoBox.innerHTML = `
-                <span style="font-size: 1.1em;">🔔 Today's Schedule (**${hariIni}**):</span>
+                <span style="font-size: 1.1em;">🔔 Today's Schedule (${hariIni}):</span>
                 <br>
                 <span style="font-weight: normal; margin-top: 5px; display: inline-block;">${scheduleText}</span>
             `;
